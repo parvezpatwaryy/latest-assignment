@@ -25,7 +25,7 @@ async function run() {
     const ideasCollection = database.collection("dataall");
     const commentsCollection = database.collection("comments");
 
-    // ১. নতুন আইডিয়া অ্যাড করার API
+    
     app.post('/api/ideas', async (req, res) => {
       try {
         const ideaData = req.body;
@@ -36,7 +36,6 @@ async function run() {
       }
     });
 
-    // ২. ট্রেন্ডিং আইডিয়া গেট করার API
     app.get('/api/trending-ideas', async (req, res) => {
       try {
         const result = await ideasCollection.find().limit(6).toArray();
@@ -46,7 +45,6 @@ async function run() {
       }
     });
 
-    // ৩. সব আইডিয়া খোঁজা এবং ফিল্টার করার API
     app.get('/api/ideas', async (req, res) => {
       try {
         const { search, category } = req.query;
@@ -64,8 +62,6 @@ async function run() {
         res.status(500).send({ success: false, error: error.message });
       }
     });
-
-    // ৪. আইডি অনুযায়ী নির্দিষ্ট আইডিয়া ডিটেইলস জানার API
     app.get('/api/ideas/:id', async (req, res) => {
       try {
         const id = req.params.id;
@@ -79,12 +75,9 @@ async function run() {
         res.status(500).send({ success: false, error: error.message });
       }
     });
-
-    // ৫. নির্দিষ্ট ইউজারের নিজের সাবমিট করা আইডিয়াগুলো দেখার API
     app.get('/api/my-ideas', async (req, res) => {
       try {
         const email = req.query.email;
-        // ফ্রন্টএন্ড এবং ডাটাবেজের ইমেইল ফিল্ডের সামঞ্জস্য বজায় রাখতে $or ব্যবহার করা হয়েছে
         const query = { $or: [{ userEmail: email }, { email: email }] };
         const result = await ideasCollection.find(query).toArray();
         res.send(result);
@@ -92,8 +85,6 @@ async function run() {
         res.status(500).send({ success: false, error: error.message });
       }
     });
-
-    // ৬. আইডিয়া আপডেট করার API
     app.put('/api/ideas/:id', async (req, res) => {
       try {
         const id = req.params.id;
