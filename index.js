@@ -228,8 +228,6 @@ async function run() {
         res.status(500).send({ success: false, message: "Internal server error" });
       }
     });
-
-    // MongoDB Ping Command
     await client.db("admin").command({ ping: 1 });
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
 
