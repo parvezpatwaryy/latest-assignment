@@ -24,6 +24,8 @@ async function run() {
     const database = client.db("assignmentNine");
     const ideasCollection = database.collection("dataall");
     const commentsCollection = database.collection("comments");
+
+    // ১. নতুন আইডিয়া অ্যাড করার API
     app.post('/api/ideas', async (req, res) => {
       try {
         const ideaData = req.body;
@@ -33,6 +35,8 @@ async function run() {
         res.status(500).send({ success: false, error: error.message });
       }
     });
+
+    // ২. ট্রেন্ডিং আইডিয়া গেট করার API
     app.get('/api/trending-ideas', async (req, res) => {
       try {
         const result = await ideasCollection.find().limit(6).toArray();
@@ -41,6 +45,8 @@ async function run() {
         res.status(500).send({ success: false, error: error.message });
       }
     });
+
+    // ৩. সব আইডিয়া খোঁজা এবং ফিল্টার করার API
     app.get('/api/ideas', async (req, res) => {
       try {
         const { search, category } = req.query;
@@ -58,6 +64,8 @@ async function run() {
         res.status(500).send({ success: false, error: error.message });
       }
     });
+
+    // ৪. আইডি অনুযায়ী নির্দিষ্ট আইডিয়া ডিটেইলস জানার API
     app.get('/api/ideas/:id', async (req, res) => {
       try {
         const id = req.params.id;
@@ -71,16 +79,21 @@ async function run() {
         res.status(500).send({ success: false, error: error.message });
       }
     });
+
+    // ৫. নির্দিষ্ট ইউজারের নিজের সাবমিট করা আইডিয়াগুলো দেখার API
     app.get('/api/my-ideas', async (req, res) => {
       try {
         const email = req.query.email;
-        const query = { userEmail: email };
+        // ফ্রন্টএন্ড এবং ডাটাবেজের ইমেইল ফিল্ডের সামঞ্জস্য বজায় রাখতে $or ব্যবহার করা হয়েছে
+        const query = { $or: [{ userEmail: email }, { email: email }] };
         const result = await ideasCollection.find(query).toArray();
         res.send(result);
       } catch (error) {
         res.status(500).send({ success: false, error: error.message });
       }
     });
+
+    // ৬. আইডিয়া আপডেট করার API
     app.put('/api/ideas/:id', async (req, res) => {
       try {
         const id = req.params.id;
@@ -109,6 +122,8 @@ async function run() {
         res.status(500).send({ success: false, error: error.message });
       }
     });
+
+    // ৭. আইডিয়া ডিলিট করার API
     app.delete('/api/ideas/:id', async (req, res) => {
       try {
         const id = req.params.id;
@@ -122,6 +137,8 @@ async function run() {
         res.status(500).send({ success: false, error: error.message });
       }
     });
+
+    // 💬 ৮. নতুন কমেন্ট পোস্ট করার API
     app.post('/api/comments', async (req, res) => {
       try {
         const comment = req.body;
@@ -132,6 +149,8 @@ async function run() {
         res.status(500).send({ success: false, error: error.message });
       }
     });
+
+    // 💬 ৯. আইডিয়া ডিটেইলস পেজের জন্য সব কমেন্ট লোড করার API
     app.get('/api/comments', async (req, res) => {
       try {
         const ideaId = req.query.ideaId;
@@ -142,34 +161,44 @@ async function run() {
         res.status(500).send({ success: false, error: error.message });
       }
     });
+
+    // 💬 ১০. নির্দিষ্ট ইমেইলের সব কমেন্ট ডিরেক্ট খুঁজে বের করার API
     app.get('/api/my-comments', async (req, res) => {
       try {
         const email = req.query.email;
         if (!email) {
           return res.status(400).send({ message: "Email query parameter is required" });
         }
-        const query = { userEmail: email };
+        // ফ্রন্টএন্ড থেকে আসা 'email' এবং 'userEmail' দুই নামেই যেন ডাটা খুঁজে পায় তার চমৎকার ফিক্স
+        const query = { $or: [{ email: email }, { userEmail: email }] };
         const result = await commentsCollection.find(query).toArray();
         res.send(result);
       } catch (error) {
         res.status(500).send({ success: false, error: error.message });
       }
     });
+
+    // ⚙️ ১১. কমেন্ট এডিট করার API
     app.put('/api/comments/:id', async (req, res) => {
       try {
         const id = req.params.id;
         const { text } = req.body;
         const filter = { _id: new ObjectId(id) };
-        const updatedDoc = { $set: { text: text, timestamp: new Date() } };
+        const updatedDoc = { $set: { commentText: text, timestamp: new Date() } };
         const result = await commentsCollection.updateOne(filter, updatedDoc);
         res.send(result);
       } catch (error) {
         res.status(500).send({ success: false, error: error.message });
       }
     });
+
+    // 🗑️ ১২. কমেন্ট ডিলিট করার API (Remove Interaction বাটনের জন্য)
     app.delete('/api/comments/:id', async (req, res) => {
       try {
         const id = req.params.id;
+        if (!ObjectId.isValid(id)) {
+          return res.status(400).send({ success: false, message: "Invalid ID format" });
+        }
         const query = { _id: new ObjectId(id) };
         const result = await commentsCollection.deleteOne(query);
         res.send(result);
@@ -177,43 +206,62 @@ async function run() {
         res.status(500).send({ success: false, error: error.message });
       }
     });
+
+    // 📊 ১৩. My Interactions পেজে ইউজারের করা কমেন্টের কমপ্লিট ডাটা পাঠানোর API [FIXED]
     app.get('/api/my-interactions', async (req, res) => {
       try {
         const email = req.query.email;
-        const userComments = await commentsCollection.find({ userEmail: email }).toArray();
-
-        const ideaIds = [...new Set(userComments.map(c => c.ideaId).filter(id => id))];
-
-        if (ideaIds.length === 0) {
-          return res.send([]);
+        if (!email) {
+          return res.status(400).send({ success: false, message: "Email is required" });
         }
 
-        const objectIds = ideaIds.map(id => new ObjectId(id));
-        const commentedIdeas = await ideasCollection.find({ _id: { $in: objectIds } }).toArray();
-        res.send(commentedIdeas);
+        // ডাটাবেজ থেকে এই ইউজারের করা সব কমেন্ট খুঁজে বের করা (উভয় ফিল্ড নেম সাপোর্ট করবে)
+        const query = { $or: [{ email: email }, { userEmail: email }] };
+        const userComments = await commentsCollection.find(query).toArray();
+
+        // ফ্রন্টএন্ড টেবিলে দেখানোর জন্য কমেন্টের পুরো অবজেক্টটাই সরাসরি রিটার্ন করা হলো
+        res.send(userComments);
       } catch (error) {
         res.status(500).send({ success: false, error: error.message });
       }
     });
+
+    // 📈 ১৪. ড্যাশবোর্ডের জন্য আইডিয়া কাউন্ট করার API
     app.get("/api/ideas/count", async (req, res) => {
       try {
         const email = req.query.email;
-        const count = await ideasCollection.countDocuments({ userEmail: email });
+        const query = { $or: [{ userEmail: email }, { email: email }] };
+        const count = await ideasCollection.countDocuments(query);
         res.send({ count });
       } catch (error) {
         res.status(500).send({ message: "Error counting ideas" });
       }
     });
+
+    // 📈 ১৫. ড্যাশবোর্ডের জন্য কমেন্ট কাউন্ট করার API
     app.get("/api/comments/count", async (req, res) => {
       try {
         const email = req.query.email;
-        const count = await commentsCollection.countDocuments({ userEmail: email });
+        const query = { $or: [{ userEmail: email }, { email: email }] };
+        const count = await commentsCollection.countDocuments(query);
         res.send({ count });
       } catch (error) {
         res.status(500).send({ message: "Error counting comments" });
       }
     });
-    
+
+
+    app.get('/api/trending-ideas', async (req, res) => {
+      try {
+        // ideasCollection বা আপনার dataall কালেকশন থেকে limit(6) করে ডেটা আনা হচ্ছে
+        const result = await ideasCollection.find().limit(6).toArray();
+        res.send(result);
+      } catch (error) {
+        console.error("Error fetching trending ideas:", error);
+        res.status(500).send({ success: false, message: "Internal server error" });
+      }
+    });
+
     // MongoDB Ping Command
     await client.db("admin").command({ ping: 1 });
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
@@ -227,7 +275,6 @@ run().catch(console.dir);
 app.get('/', (req, res) => {
   res.send('IdeaVault Server is Running Smoothly!');
 });
-
 
 app.listen(port, () => {
   console.log(`Server listening on port ${port}`);
