@@ -12,8 +12,5 @@
       "dest": "index.js",
       "methods": ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"]
     }
-  ],
-  "env": {
-    "MONGODB_URI": "mongodb+srv://assignmentNine:VXh6LRBawcHZGbg4@cluster0.axinw3a.mongodb.net/?appName=Cluster0"
-  }
+  ]
 }
