@@ -184,27 +184,19 @@ async function run() {
         res.status(500).send({ success: false, error: error.message });
       }
     });
-
-    // 📊 ১৩. My Interactions পেজে ইউজারের করা কমেন্টের কমপ্লিট ডাটা পাঠানোর API [FIXED]
     app.get('/api/my-interactions', async (req, res) => {
       try {
         const email = req.query.email;
         if (!email) {
           return res.status(400).send({ success: false, message: "Email is required" });
         }
-
-        // ডাটাবেজ থেকে এই ইউজারের করা সব কমেন্ট খুঁজে বের করা (উভয় ফিল্ড নেম সাপোর্ট করবে)
         const query = { $or: [{ email: email }, { userEmail: email }] };
         const userComments = await commentsCollection.find(query).toArray();
-
-        // ফ্রন্টএন্ড টেবিলে দেখানোর জন্য কমেন্টের পুরো অবজেক্টটাই সরাসরি রিটার্ন করা হলো
         res.send(userComments);
       } catch (error) {
         res.status(500).send({ success: false, error: error.message });
       }
     });
-
-    // 📈 ১৪. ড্যাশবোর্ডের জন্য আইডিয়া কাউন্ট করার API
     app.get("/api/ideas/count", async (req, res) => {
       try {
         const email = req.query.email;
@@ -215,8 +207,6 @@ async function run() {
         res.status(500).send({ message: "Error counting ideas" });
       }
     });
-
-    // 📈 ১৫. ড্যাশবোর্ডের জন্য কমেন্ট কাউন্ট করার API
     app.get("/api/comments/count", async (req, res) => {
       try {
         const email = req.query.email;
@@ -231,7 +221,6 @@ async function run() {
 
     app.get('/api/trending-ideas', async (req, res) => {
       try {
-        // ideasCollection বা আপনার dataall কালেকশন থেকে limit(6) করে ডেটা আনা হচ্ছে
         const result = await ideasCollection.find().limit(6).toArray();
         res.send(result);
       } catch (error) {
