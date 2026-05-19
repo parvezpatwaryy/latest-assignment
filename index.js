@@ -113,8 +113,6 @@ async function run() {
         res.status(500).send({ success: false, error: error.message });
       }
     });
-
-    // ৭. আইডিয়া ডিলিট করার API
     app.delete('/api/ideas/:id', async (req, res) => {
       try {
         const id = req.params.id;
@@ -128,8 +126,6 @@ async function run() {
         res.status(500).send({ success: false, error: error.message });
       }
     });
-
-    // 💬 ৮. নতুন কমেন্ট পোস্ট করার API
     app.post('/api/comments', async (req, res) => {
       try {
         const comment = req.body;
@@ -140,8 +136,6 @@ async function run() {
         res.status(500).send({ success: false, error: error.message });
       }
     });
-
-    // 💬 ৯. আইডিয়া ডিটেইলস পেজের জন্য সব কমেন্ট লোড করার API
     app.get('/api/comments', async (req, res) => {
       try {
         const ideaId = req.query.ideaId;
@@ -152,15 +146,12 @@ async function run() {
         res.status(500).send({ success: false, error: error.message });
       }
     });
-
-    // 💬 ১০. নির্দিষ্ট ইমেইলের সব কমেন্ট ডিরেক্ট খুঁজে বের করার API
     app.get('/api/my-comments', async (req, res) => {
       try {
         const email = req.query.email;
         if (!email) {
           return res.status(400).send({ message: "Email query parameter is required" });
         }
-        // ফ্রন্টএন্ড থেকে আসা 'email' এবং 'userEmail' দুই নামেই যেন ডাটা খুঁজে পায় তার চমৎকার ফিক্স
         const query = { $or: [{ email: email }, { userEmail: email }] };
         const result = await commentsCollection.find(query).toArray();
         res.send(result);
@@ -168,8 +159,6 @@ async function run() {
         res.status(500).send({ success: false, error: error.message });
       }
     });
-
-    // ⚙️ ১১. কমেন্ট এডিট করার API
     app.put('/api/comments/:id', async (req, res) => {
       try {
         const id = req.params.id;
@@ -182,8 +171,6 @@ async function run() {
         res.status(500).send({ success: false, error: error.message });
       }
     });
-
-    // 🗑️ ১২. কমেন্ট ডিলিট করার API (Remove Interaction বাটনের জন্য)
     app.delete('/api/comments/:id', async (req, res) => {
       try {
         const id = req.params.id;
