@@ -20,67 +20,62 @@ const client = new MongoClient(uri, {
   }
 });
 
-async function run() {
-  try {
-    // ১. কানেকশন ওপেন করা জরুরি
+// DB Collections
+const database = client.db("assignmentNine");
+const ideasCollection = database.collection("dataall");
+const commentsCollection = database.collection("comments");
+
+// DB Connect Function
+async function connectDB() {
+  if (!client.topology || !client.topology.isConnected()) {
     await client.connect();
-    console.log("Successfully connected to MongoDB!");
-
-    const database = client.db("assignmentNine");
-    const ideasCollection = database.collection("dataall");
-    const commentsCollection = database.collection("comments");
-
-    // --- API Routes ---
-
-    app.post('/api/ideas', async (req, res) => {
-      const ideaData = req.body;
-      const result = await ideasCollection.insertOne(ideaData);
-      res.status(201).send({ success: true, insertedId: result.insertedId });
-    });
-
-    app.get('/api/trending-ideas', async (req, res) => {
-      const result = await ideasCollection.find().limit(6).toArray();
-      res.send(result);
-    });
-
-    app.get('/api/ideas', async (req, res) => {
-      const { search, category } = req.query;
-      let query = {};
-      if (search) query.title = { $regex: search, $options: 'i' };
-      if (category && category !== 'All') query.category = category;
-
-      const result = await ideasCollection.find(query).toArray();
-      res.send(result);
-    });
-
-    app.get('/api/ideas/:id', async (req, res) => {
-      const id = req.params.id;
-      if (!ObjectId.isValid(id)) return res.status(400).send({ message: "Invalid ID" });
-      const result = await ideasCollection.findOne({ _id: new ObjectId(id) });
-      res.send(result);
-    });
-
-    app.post('/api/comments', async (req, res) => {
-      const comment = { ...req.body, timestamp: new Date() };
-      const result = await commentsCollection.insertOne(comment);
-      res.status(201).send({ success: true, insertedId: result.insertedId });
-    });
-
-    // অন্যান্য রুটগুলো একইভাবে কাজ করবে...
-
-    app.get('/', (req, res) => {
-      res.send('IdeaVault Server is Running Smoothly!');
-    });
-
-  } catch (error) {
-    console.error("Database connection error:", error);
+    console.log("Connected to MongoDB!");
   }
 }
 
-// ২. রান ফাংশনটি কল করা
-run().catch(console.dir);
+// --- API Routes ---
 
-// ৩. সার্ভার লিসেন (ভার্সেলে অ্যাপ লিসেন অটোমেটিক হ্যান্ডেল হয়)
-app.listen(port, () => {
-  console.log(`Server listening on port ${port}`);
+app.get('/', (req, res) => {
+  res.send('IdeaVault Server is Running Smoothly!');
 });
+
+app.post('/api/ideas', async (req, res) => {
+  await connectDB();
+  const ideaData = req.body;
+  const result = await ideasCollection.insertOne(ideaData);
+  res.status(201).send({ success: true, insertedId: result.insertedId });
+});
+
+app.get('/api/trending-ideas', async (req, res) => {
+  await connectDB();
+  const result = await ideasCollection.find().limit(6).toArray();
+  res.send(result);
+});
+
+app.get('/api/ideas', async (req, res) => {
+  await connectDB();
+  const { search, category } = req.query;
+  let query = {};
+  if (search) query.title = { $regex: search, $options: 'i' };
+  if (category && category !== 'All') query.category = category;
+  const result = await ideasCollection.find(query).toArray();
+  res.send(result);
+});
+
+app.get('/api/ideas/:id', async (req, res) => {
+  await connectDB();
+  const id = req.params.id;
+  if (!ObjectId.isValid(id)) return res.status(400).send({ message: "Invalid ID" });
+  const result = await ideasCollection.findOne({ _id: new ObjectId(id) });
+  res.send(result);
+});
+
+app.post('/api/comments', async (req, res) => {
+  await connectDB();
+  const comment = { ...req.body, timestamp: new Date() };
+  const result = await commentsCollection.insertOne(comment);
+  res.status(201).send({ success: true, insertedId: result.insertedId });
+});
+
+// ✅ এটা সবচেয়ে জরুরি - Vercel এর জন্য
+module.exports = app;
