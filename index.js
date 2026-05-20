@@ -10,7 +10,6 @@ const port = process.env.PORT || 8000;
 app.use(cors());
 app.use(express.json());
 
-// MongoDB Connection
 const uri = process.env.MONGODB_URI;
 const client = new MongoClient(uri, {
   serverApi: {
@@ -20,12 +19,11 @@ const client = new MongoClient(uri, {
   }
 });
 
-// DB Collections
 const database = client.db("assignmentNine");
 const ideasCollection = database.collection("dataall");
 const commentsCollection = database.collection("comments");
+const usersCollection = database.collection("users"); // ইউজার ডাটাবেস কালেকশন
 
-// DB Connect Function
 async function connectDB() {
   if (!client.topology || !client.topology.isConnected()) {
     await client.connect();
@@ -33,16 +31,35 @@ async function connectDB() {
   }
 }
 
-// --- API Routes ---
-
+// Basic Route
 app.get('/', (req, res) => {
   res.send('IdeaVault Server is Running Smoothly!');
 });
 
+// --- Social Login Route (আপনার সমস্যার সমাধান) ---
+app.post('/api/auth/sign-in/social', async (req, res) => {
+  try {
+    await connectDB();
+    const userData = req.body;
+    
+    // ইউজার আছে কি না চেক করুন
+    const existingUser = await usersCollection.findOne({ email: userData.email });
+    if (existingUser) {
+      return res.status(200).send({ message: "User already exists", user: existingUser });
+    }
+
+    // নতুন ইউজার সেভ করুন
+    const result = await usersCollection.insertOne({ ...userData, createdAt: new Date() });
+    res.status(201).send({ success: true, insertedId: result.insertedId });
+  } catch (error) {
+    res.status(500).send({ message: "Server Error", error: error.message });
+  }
+});
+
+// --- অন্যান্য রুটস ---
 app.post('/api/ideas', async (req, res) => {
   await connectDB();
-  const ideaData = req.body;
-  const result = await ideasCollection.insertOne(ideaData);
+  const result = await ideasCollection.insertOne(req.body);
   res.status(201).send({ success: true, insertedId: result.insertedId });
 });
 
@@ -64,7 +81,7 @@ app.get('/api/ideas', async (req, res) => {
 
 app.get('/api/ideas/:id', async (req, res) => {
   await connectDB();
-  const id = req.params.id;
+  const { id } = req.params;
   if (!ObjectId.isValid(id)) return res.status(400).send({ message: "Invalid ID" });
   const result = await ideasCollection.findOne({ _id: new ObjectId(id) });
   res.send(result);
@@ -77,5 +94,9 @@ app.post('/api/comments', async (req, res) => {
   res.status(201).send({ success: true, insertedId: result.insertedId });
 });
 
-// ✅ এটা সবচেয়ে জরুরি - Vercel এর জন্য
+// সার্ভার চালু করা (যদি লোকাল হয়)
+if (require.main === module) {
+  app.listen(port, () => console.log(`Server running on port ${port}`));
+}
+
 module.exports = app;
